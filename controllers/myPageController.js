@@ -7,17 +7,16 @@ module.exports = {
     //마이페이지 메인(게시글 보기)
     mypageMain: async (req, res) => {
         try {
-            let userId = res.locals.currentUser.getDataValue('userId');
-
-            let query = `
-                SELECT p.postId, p.title, p.userId, i.imageUrl
-                FROM posts p
-                LEFT JOIN users u ON u.userId = p.userId
-                LEFT JOIN images i ON p.postId = i.postId
-                WHERE u.userId = ${userId};
-            `;
-            let [myposts, metadata] = await sequelize.query(query, { type: Sequelize.SELECT });
-            console.log("Query Results:", myposts);
+            const userId = req.session.user.userId;
+            const response = await axios.get(`http://community:3000/community-api/posts/${userId}`, {
+                headers: {
+                  Cookie: req.headers.cookie
+                },
+                timeout: 5000 // 5초 안에 응답 없으면 오류 발생
+            });
+            
+              console.log("응답 도착:", response.status, response.data);
+              let myposts = response.data;
 
             let postsMap = {};
             myposts.forEach(post => {
@@ -52,15 +51,17 @@ module.exports = {
     //마이페이지(스크랩 보기)
     mypageScrap: async (req, res) => {
         try {
+            const userId = req.session.user.userId;
             //내가 저장한 게시글 목록 불러오기 
-            let userId = res.locals.currentUser.getDataValue('userId');
-            let query = `
-                SELECT p.title, p.date, p.postId
-                FROM saves s
-                LEFT join posts p on s.postId = p.postId
-                where s.userId = ${userId};   
-            `;
-            let [myposts, metadata] = await sequelize.query(query, { type: Sequelize.SELECT });
+            const response = await axios.get(`http://community:3000/community-api/saves/${userId}`, {
+                headers: {              
+                  Cookie: req.headers.cookie
+                },
+                timeout: 5000 // 5초 안에 응답 없으면 오류 발생
+              });
+            
+              console.log("응답 도착:", response.status, response.data);
+              let myposts = response.data;
 
              // 날짜 출력 조정 
              myposts.forEach(post => {
@@ -91,15 +92,16 @@ module.exports = {
     mypageComment: async (req, res) => {
         try {
             //내가 단 댓글 목록 불러오기 
-            let userId = res.locals.currentUser.getDataValue('userId');
-            let query = `
-                        SELECT p.title, c.content, c.createdAt, p.postId  
-                        FROM comments c
-                        left join posts p on p.postId= c.postId
-                        where c.userId =${userId};
-            `;
-            let [myposts, metadata] = await sequelize.query(query, { type: Sequelize.SELECT });
-
+            const userId = req.session.user.userId;
+            const response = await axios.get(`http://community:3000/community-api/comments/${userId}`, {
+                headers: {
+                  Cookie: req.headers.cookie
+                },
+                timeout: 5000 // 5초 안에 응답 없으면 오류 발생
+              });
+            
+              console.log("응답 도착:", response.status, response.data);
+              let myposts = response.data;
              // 날짜 출력 조정
              myposts.forEach(post => {
                 const date = new Date(post.createdAt);
@@ -127,7 +129,7 @@ module.exports = {
     // 마이페이지(개최한 펀딩 보기)
 mypageMyFunding: async (req, res) => {
     try {
-        let userId = res.locals.currentUser.getDataValue('userId');
+        const userId = req.session.user.userId;
 
         const response = await axios.get("http://funding-service:3001/funding/opened", {
             headers: {
@@ -137,7 +139,7 @@ mypageMyFunding: async (req, res) => {
           });
         
           console.log("응답 도착:", response.status, response.data);
-          let myposts = response.data;
+          let myposts = response .data;
         
 
         // 날짜 출력 조정 
@@ -178,7 +180,7 @@ mypageMyFunding: async (req, res) => {
     mypageParticipatedFunding: async (req, res) => {
         try {
             //참여한 펀딩 불러오기 
-            let userId = res.locals.currentUser.getDataValue('userId');
+            const userId = req.session.user.userId;
             
             // 공동구매 서비스에 요청
             const response = await axios.get("http://funding-service:3001/funding/participated", {

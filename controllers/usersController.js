@@ -3,7 +3,7 @@ const User = db.user;
 const passport = require("passport");
 // const path = require("path");
 // const upload = require("../config/multerConfig"); // Import the multer config
-
+const { CommunityUser } = require("../models/communityDb");
 
 const getUserParams = body => ({
     name: body.name,
@@ -15,7 +15,8 @@ const getUserParams = body => ({
     district: body.district,
     town: body.town,
     detail: body.detail,
-    imageUrl: body.imageUrl
+    imageUrl: body.imageUrl, 
+    mysalt: body.mysalt
 });
 
 module.exports = {
@@ -58,7 +59,7 @@ module.exports = {
             
     
             req.flash("success", "로그인 성공");
-            return res.redirect("/");
+            return res.redirect("/auth/mypage");
           });
         })(req, res, next);
       },
@@ -68,7 +69,7 @@ module.exports = {
     logout: (req, res, next) => {
         req.logout((err) => {
             req.flash("success", "로그아웃 되었습니다.");
-            res.redirect("/");
+            res.redirect("/auth/login");
         });
     },
 
@@ -91,14 +92,36 @@ module.exports = {
         if (req.skip) next();
         let userParams = getUserParams(req.body);
         
-        User.register(new User(userParams), req.body.password, (error, user) => {
+        User.register(new User(userParams), password, async (error, user) => {
             if (user) {
+              try {
+                // 커뮤니티 DB에 복사 저장
+                await CommunityUser.create({
+                  userId: user.userId,
+                  email: user.email,
+                  password: user.password,
+                  name: user.name,
+                  nickname: user.nickname,
+                  phoneNumber: user.phoneNumber,
+                  city: user.city,
+                  district: user.district,
+                  town: user.town,
+                  detail: user.detail,
+                  imageUrl: user.imageUrl,
+                  mysalt: user.mysalt
+                });
+      
                 req.flash("success", `${user.name}님 회원가입 되었습니다.`);
                 res.redirect("/auth/login");
+              } catch (err) {
+                console.error("커뮤니티 DB 저장 실패:", err.message);
+                req.flash("error", "회원가입은 되었으나 커뮤니티 동기화에 실패했습니다.");
+                res.redirect("/auth/login");
+              }
             } else {
-                console.log(`Error saving user: ${error.message}`);
-                req.flash("error", `회원가입 실패: ${error.message}`);
-                res.redirect("/auth/newuser");
+              console.error(`Error saving user: ${error.message}`);
+              req.flash("error", `회원가입 실패: ${error.message}`);
+              res.redirect("/auth/newuser");
             }
         });
     },
@@ -154,7 +177,7 @@ module.exports = {
         catch(error){
             console.log(`Error fetching user by ID: ${error.message}`);
             req.flash("error", "정보수정에 실패하였습니다.");
-            res.redirect("/");
+            res.redirect("/auth/mypage");
         }
     },
 
@@ -176,12 +199,13 @@ module.exports = {
                 res.redirect(`/auth/mypage`);
             } else {
                 req.flash("error", "User not found.");
-                res.redirect("/");
+                res.redirect("/auth/mypage");
             }
         } catch (error) {
             console.log(`Error updating user by ID: ${error.message}`);
             req.flash("error", "정보수정에 실패하였습니다..");
-            res.redirect("/");
+            res.redirect("/auth/mypage");
         }
     }
+    
 };

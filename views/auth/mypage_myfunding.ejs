@@ -56,10 +56,10 @@
                         <% posts.forEach(post=> { %>
                             <div class="mypost">
                                 <div class="img-box">
-                                    <img src="<%= post.imageUrl %>" alt="productImage" class="img">
+                                    <img src="<%= post.fundingProduct.imageUrl %>" alt="productImage" class="img">
                                   </div>
                                 <h2>
-                                    <%= post.productName %>
+                                    <%= post.fundingProduct.productName %>
                                     <p>기간: <%= post.fundingDate %></p> 
                                     <p>최대 참여인원: <%= post.people %>명</p>
                                 </h2>
