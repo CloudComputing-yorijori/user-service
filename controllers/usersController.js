@@ -4,6 +4,10 @@ const passport = require("passport");
 // const path = require("path");
 // const upload = require("../config/multerConfig"); // Import the multer config
 const { CommunityUser } = require("../models/communityDb");
+const axios = require('axios');
+const FormData = require('form-data');
+const fs = require('fs');
+const path = require('path');
 
 const getUserParams = body => ({
     name: body.name,
@@ -187,7 +191,28 @@ module.exports = {
         let userParams = getUserParams(req.body);
 
         if (req.file) {
-            userParams.imageUrl = '/uploadprofile/' + req.file.filename; // 파일 경로를 imageUrl에 저장
+            try {
+                const formData = new FormData();
+                formData.append('file', req.file.buffer, {
+                    filename: req.file.originalname,
+                    contentType: req.file.mimetype,
+                });
+                formData.append('userId', userId);
+    
+                const response = await axios.post('http://image-service:3000/image/upload/profile', formData, {
+                    headers: formData.getHeaders()
+                });
+    
+                const { filename } = response.data;
+    
+                // 이미지 URL은 image 서비스에서 고정된 패턴으로 정해진다고 가정
+                const imageUrl = filename;
+                userParams.imageUrl = imageUrl;
+            } catch (err) {
+                console.error('⚠️ 이미지 업로드 실패:', err.message);
+                req.flash("error", "이미지 업로드에 실패했습니다.");
+                return res.redirect("/auth/mypage");
+            }
         }
 
         try {

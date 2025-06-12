@@ -34,14 +34,43 @@ module.exports = {
             let postsArray = Object.values(postsMap);
 
             let query2 = `
-                SELECT nickname, imageUrl
+                SELECT nickname
                 FROM users
                 WHERE userId = ${userId};     
             `;
-            let [results, metadata2] = await sequelize.query(query2, { type: Sequelize.SELECT });
-            console.log(results);
+            let [results] = await sequelize.query(query2, { type: Sequelize.SELECT });
+            
+            // 프로필 이미지는 이미지 서비스에서 가져오기
+            let profileImageUrl = null;
+            try {
+                console.log("이미지 요청 보내는 중:", userId);
+                const imgRes = await axios.get(`http://image-service:3000/image/user/${userId}`);
+                console.log("✅ 이미지 응답:", imgRes.status);
+                profileImageUrl = imgRes.data.url || imgRes.data.imageUrl; // 응답 구조에 따라
+                console.log("✅ 이미지 url:", profileImageUrl);
 
-            res.render("auth/mypage_main", { posts: postsArray, result: results[0], userId: userId });
+            } catch (err) {
+                console.warn("❌ 이미지 요청 실패:", err.message);
+                if (err.response) {
+                    console.warn("서버 응답 상태:", err.response.status);
+                    console.warn("응답 본문:", err.response.data);
+                } else if (err.request) {
+                    console.warn("요청은 전송됐지만 응답 없음:", err.request);
+                } else {
+                    console.warn("요청 자체 실패:", err.message);
+                }
+            }
+
+            const profileResult = {
+                ...results[0],
+                imageUrl: profileImageUrl
+            };
+            res.render("auth/mypage_main", {
+                posts: postsArray,
+                result: profileResult,
+                userId: userId
+            });
+
         } catch (error) {
             res.status(500).send({ message: error.message });
             console.error(`Error: ${error.message}`);
@@ -71,16 +100,24 @@ module.exports = {
             });
 
             //팝업에 닉네임이랑 프로필 뜨게 
-            let query2 = `
-                 SELECT nickname, imageUrl
-                 FROM users
-                 where userId = ${userId};     
-            `;
-            let [results, metadata2] = await sequelize.query(query2, { type: Sequelize.SELECT });
+            let query2 = `SELECT nickname FROM users WHERE userId = ${userId};`;
+            let [results] = await sequelize.query(query2, { type: Sequelize.SELECT });
 
-            console.log("Query Results:", myposts); // 쿼리 결과를 콘솔에 출력
-            res.render("auth/mypage_scrap", { posts: myposts, result:results[0], userId:userId }); // 결과를 사용하여 페이지 렌더링
-        } catch (error) {
+            let profileImageUrl = null;
+            try {
+                const imgRes = await axios.get(`http://image-service:3000/image/user/${userId}`);
+                profileImageUrl = imgRes.data.url || imgRes.data.imageUrl;
+            } catch (err) {
+                console.warn("❌ 이미지 요청 실패:", err.message);
+            }
+
+            const profileResult = {
+                ...results[0],
+                imageUrl: profileImageUrl
+            };
+
+            res.render("auth/mypage_scrap", { posts: myposts, result: profileResult, userId: userId });
+       } catch (error) {
             res.status(500).send({ message: error.message });
             console.error(`Error: ${error.message}`);
         }
@@ -110,17 +147,24 @@ module.exports = {
             });
 
             //팝업에 닉네임이랑 프로필 뜨게 
-            let query2 = `
-                 SELECT nickname, imageUrl
-                 FROM users
-                 where userId = ${userId};     
-            `;
-            let [results, metadata2] = await sequelize.query(query2, { type: Sequelize.SELECT });
+            let query2 = `SELECT nickname FROM users WHERE userId = ${userId};`;
+            let [results] = await sequelize.query(query2, { type: Sequelize.SELECT });
 
+            let profileImageUrl = null;
+            try {
+                const imgRes = await axios.get(`http://image-service:3000/image/user/${userId}`);
+                profileImageUrl = imgRes.data.url || imgRes.data.imageUrl;
+            } catch (err) {
+                console.warn("❌ 이미지 요청 실패:", err.message);
+            }
 
-            console.log("Query Results:", myposts); // 쿼리 결과를 콘솔에 출력
-            res.render("auth/mypage_comment", { posts: myposts, result:results[0], userId:userId }); // 결과를 사용하여 페이지 렌더링
-        } catch (error) {
+            const profileResult = {
+                ...results[0],
+                imageUrl: profileImageUrl
+            };
+
+            res.render("auth/mypage_comment", { posts: myposts, result: profileResult, userId: userId });
+         } catch (error) {
             res.status(500).send({ message: error.message });
             console.error(`Error: ${error.message}`);
         }
@@ -150,19 +194,24 @@ mypageMyFunding: async (req, res) => {
         });
 
         // 팝업에 닉네임이랑 프로필 뜨게 
-        let query2 = `
-             SELECT nickname, imageUrl
-             FROM users
-             WHERE userId = ${userId};
-        `;
-        let [results] = await sequelize.query(query2, { type: Sequelize.SELECT });
+        let query2 = `SELECT nickname FROM users WHERE userId = ${userId};`;
+            let [results] = await sequelize.query(query2, { type: Sequelize.SELECT });
 
-        console.log("Query Results:", myposts);
-        res.render("auth/mypage_myfunding", {
-            posts: myposts,
-            result: results[0],
-            userId: userId
-        });
+            let profileImageUrl = null;
+            try {
+                const imgRes = await axios.get(`http://image-service:3000/image/user/${userId}`);
+                profileImageUrl = imgRes.data.url || imgRes.data.imageUrl;
+            } catch (err) {
+                console.warn("❌ 이미지 요청 실패:", err.message);
+            }
+
+            const profileResult = {
+                ...results[0],
+                imageUrl: profileImageUrl
+            };
+
+            res.render("auth/mypage_myfunding", { posts: myposts, result: profileResult, userId: userId });
+        
     } catch (axiosError) {
         console.error("Axios 에러:", axiosError.code, axiosError.message);
         if (axiosError.response) {
@@ -200,17 +249,24 @@ mypageMyFunding: async (req, res) => {
             });
 
             //팝업에 닉네임이랑 프로필 뜨게 
-            let query2 = `
-                 SELECT nickname, imageUrl
-                 FROM users
-                 where userId = ${userId};     
-            `;
-            let [results, metadata2] = await sequelize.query(query2, { type: Sequelize.SELECT });
+            let query2 = `SELECT nickname FROM users WHERE userId = ${userId};`;
+            let [results] = await sequelize.query(query2, { type: Sequelize.SELECT });
 
+            let profileImageUrl = null;
+            try {
+                const imgRes = await axios.get(`http://image-service:3000/image/user/${userId}`);
+                profileImageUrl = imgRes.data.url || imgRes.data.imageUrl;
+            } catch (err) {
+                console.warn("❌ 이미지 요청 실패:", err.message);
+            }
 
-            console.log("Query Results:", myposts); // 쿼리 결과를 콘솔에 출력
-            res.render("auth/mypage_participatedfunding", { posts: myposts, result:results[0], userId:userId }); // 결과를 사용하여 페이지 렌더링
-        } catch (error) {
+            const profileResult = {
+                ...results[0],
+                imageUrl: profileImageUrl
+            };
+
+            res.render("auth/mypage_participatedfunding", { posts: myposts, result: profileResult, userId: userId });
+       } catch (error) {
             res.status(500).send({ message: error.message });
             console.error(`Error: ${error.message}`);
         }

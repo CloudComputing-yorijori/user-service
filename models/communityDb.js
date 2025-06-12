@@ -1,6 +1,6 @@
 const { Sequelize, DataTypes } = require("sequelize");
 
-const communityDb = new Sequelize("yorijori", "root", "root", {
+const communityDb = new Sequelize("yorijori_community", "root", "root", {
   host: "mysql",  // 커뮤니티 MySQL 서비스 이름 (Kubernetes 내부 DNS)
   port: 3306,
   dialect: "mysql",
