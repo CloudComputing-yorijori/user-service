@@ -74,8 +74,7 @@ app.use(
           secure: false,  
           httpOnly: true,  // JS 접근 차단 (보안)
           maxAge: 1000 * 60 * 60 * 24,
-          sameSite: 'lax', 
-          domain: ".yorijori.com" // 도메인 일치
+          sameSite: 'lax'
       }
   })
 );
